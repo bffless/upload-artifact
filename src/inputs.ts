@@ -6,6 +6,7 @@ export function getInputs(): ActionInputs {
   const path = core.getInput('path', { required: true });
   const apiUrl = core.getInput('api-url', { required: true });
   const apiKey = core.getInput('api-key', { required: true });
+  core.setSecret(apiKey);
   const workingDirectory = core.getInput('working-directory') || '.';
 
   const context = deriveContext();

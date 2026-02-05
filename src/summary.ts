@@ -10,7 +10,7 @@ export async function writeSummary(
   }
 
   const rows: [string, string][] = [
-    ['Repository', response.repository],
+    ['Repository', inputs.repository],
     ['Commit SHA', `\`${response.commitSha}\``],
   ];
 
