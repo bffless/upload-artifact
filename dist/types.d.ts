@@ -31,7 +31,7 @@ export interface DeploymentUrls {
 }
 export interface UploadResponse {
     deploymentId: string;
-    repository: string;
+    repository?: string;
     commitSha: string;
     branch?: string;
     fileCount: number;
