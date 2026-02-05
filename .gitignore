@@ -1,0 +1,6 @@
+node_modules/
+lib/
+*.tsbuildinfo
+
+# Don't ignore dist/ - it's committed for GitHub Actions
+# dist/
