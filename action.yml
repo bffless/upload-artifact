@@ -1,0 +1,88 @@
+name: 'BFFLESS Upload Artifact'
+description: 'Zip and upload build artifacts to a BFFLESS static asset hosting platform'
+author: 'bffless'
+
+branding:
+  icon: 'upload-cloud'
+  color: 'blue'
+
+inputs:
+  path:
+    description: 'Build directory to zip and upload'
+    required: true
+  api-url:
+    description: 'Base URL of the BFFLESS hosting platform'
+    required: true
+  api-key:
+    description: 'API key for authentication (X-API-Key header)'
+    required: true
+  repository:
+    description: 'Repository in owner/repo format (default: current repository)'
+    required: false
+  commit-sha:
+    description: 'Git commit SHA (default: auto-detected from PR head or push)'
+    required: false
+  branch:
+    description: 'Branch name (default: auto-detected from PR head ref or push ref)'
+    required: false
+  is-public:
+    description: 'Public visibility for the deployment'
+    required: false
+    default: 'true'
+  alias:
+    description: 'Deployment alias (e.g., "production", "preview")'
+    required: false
+  base-path:
+    description: 'Base path prefix in zip (default: auto-derived from path input as /<path>)'
+    required: false
+  committed-at:
+    description: 'ISO 8601 commit timestamp (default: auto-detected via git log)'
+    required: false
+  description:
+    description: 'Human-readable deployment description'
+    required: false
+  proxy-rule-set-name:
+    description: 'Proxy rule set name to apply'
+    required: false
+  proxy-rule-set-id:
+    description: 'Proxy rule set ID to apply'
+    required: false
+  tags:
+    description: 'Comma-separated tags'
+    required: false
+  summary:
+    description: 'Write a GitHub Step Summary'
+    required: false
+    default: 'true'
+  summary-title:
+    description: 'Title for the step summary'
+    required: false
+    default: 'Deployment Summary'
+  working-directory:
+    description: 'Working directory for resolving relative paths'
+    required: false
+    default: '.'
+
+outputs:
+  deployment-url:
+    description: 'Primary deployment URL (SHA-based)'
+  sha-url:
+    description: 'Immutable SHA-based URL'
+  preview-url:
+    description: 'Preview URL (if basePath provided)'
+  branch-url:
+    description: 'Branch-based URL'
+  alias-url:
+    description: 'Alias-based URL'
+  deployment-id:
+    description: 'API deployment ID'
+  file-count:
+    description: 'Number of files uploaded'
+  total-size:
+    description: 'Total bytes uploaded'
+  response:
+    description: 'Raw JSON response for custom parsing'
+
+runs:
+  using: 'node20'
+  main: 'dist/index.js'
