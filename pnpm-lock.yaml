@@ -20,10 +20,16 @@ importers:
       form-data:
         specifier: ^4.0.0
         version: 4.0.5
+      mime-types:
+        specifier: ^2.1.35
+        version: 2.1.35
     devDependencies:
       '@types/archiver':
         specifier: ^6.0.2
         version: 6.0.4
+      '@types/mime-types':
+        specifier: ^2.1.4
+        version: 2.1.4
       '@types/node':
         specifier: ^20.11.0
         version: 20.19.31
@@ -395,6 +401,9 @@ packages:
 
   '@types/estree@1.0.8':
     resolution: {integrity: sha512-dWHzHa2WqEXI/O1E9OjrocMTKJl2mSrEolh1Iomrv6U+JuNwaHXsXx9bLu5gG7BUWFIN0skIQJQ/L1rIex4X6w==}
+
+  '@types/mime-types@2.1.4':
+    resolution: {integrity: sha512-lfU4b34HOri+kAY5UheuFMWPDOI+OPceBSHZKp69gEyTL/mmJ4cnU6Y/rlme3UL3GyOn6Y42hyIEw0/q8sWx5w==}
 
   '@types/node@20.19.31':
     resolution: {integrity: sha512-5jsi0wpncvTD33Sh1UCgacK37FFwDn+EG7wCmEvs62fCvBL+n8/76cAYDok21NF6+jaVWIqKwCZyX7Vbu8eB3A==}
@@ -1328,6 +1337,8 @@ snapshots:
       '@types/readdir-glob': 1.1.5
 
   '@types/estree@1.0.8': {}
+
+  '@types/mime-types@2.1.4': {}
 
   '@types/node@20.19.31':
     dependencies:

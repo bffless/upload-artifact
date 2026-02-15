@@ -4,3 +4,6 @@ lib/
 
 # Don't ignore dist/ - it's committed for GitHub Actions
 # dist/
+
+# Ignore .d.ts.map files - they contain absolute paths that differ between machines
+dist/*.d.ts.map
