@@ -14,10 +14,12 @@
     "@actions/core": "^1.10.1",
     "@actions/github": "^6.0.0",
     "archiver": "^7.0.1",
-    "form-data": "^4.0.0"
+    "form-data": "^4.0.0",
+    "mime-types": "^2.1.35"
   },
   "devDependencies": {
     "@types/archiver": "^6.0.2",
+    "@types/mime-types": "^2.1.4",
     "@types/node": "^20.11.0",
     "@vercel/ncc": "^0.38.1",
     "prettier": "^3.2.0",

@@ -6,6 +6,125 @@ import * as path from 'path';
 import FormData from 'form-data';
 import { URL } from 'url';
 import { ActionInputs, UploadResponse, UploadResult } from './types';
+import { walkDirectory, validateDirectory, FileInfo } from './files';
+import {
+  requestPrepareBatchUpload,
+  uploadFilesWithPresignedUrls,
+  finalizeUpload,
+} from './api';
+
+/**
+ * Upload files using presigned URLs (direct to storage)
+ * Returns null if presigned URLs are not supported (fallback to ZIP upload)
+ */
+export async function uploadWithPresignedUrls(
+  inputs: ActionInputs
+): Promise<UploadResult | null> {
+  // Validate and resolve directory
+  const resolvedPath = validateDirectory(inputs.path, inputs.workingDirectory);
+
+  core.info(`Scanning directory: ${resolvedPath}`);
+
+  // Walk directory and collect files
+  const files = await walkDirectory(resolvedPath, inputs.path);
+
+  if (files.length === 0) {
+    throw new Error('No files found to upload');
+  }
+
+  core.info(`Found ${files.length} files to upload`);
+
+  // Request presigned URLs
+  const prepareResponse = await requestPrepareBatchUpload(
+    inputs.apiUrl,
+    inputs.apiKey,
+    {
+      repository: inputs.repository,
+      commitSha: inputs.commitSha,
+      branch: inputs.branch,
+      alias: inputs.alias,
+      basePath: inputs.basePath,
+      description: inputs.description,
+      tags: inputs.tags,
+      proxyRuleSetName: inputs.proxyRuleSetName,
+      proxyRuleSetId: inputs.proxyRuleSetId,
+      files: files.map((f) => ({
+        path: f.relativePath,
+        size: f.size,
+        contentType: f.contentType,
+      })),
+    }
+  );
+
+  // Check if presigned URLs are supported
+  if (!prepareResponse.presignedUrlsSupported) {
+    core.info('Storage does not support presigned URLs, falling back to ZIP upload');
+    return null;
+  }
+
+  if (!prepareResponse.files || !prepareResponse.uploadToken) {
+    throw new Error('Invalid response from prepare-batch-upload');
+  }
+
+  core.info(
+    `Received ${prepareResponse.files.length} presigned URLs (expires: ${prepareResponse.expiresAt})`
+  );
+
+  // Create lookup map for presigned URLs
+  const urlMap = new Map(
+    prepareResponse.files.map((f) => [f.path, f.presignedUrl])
+  );
+
+  // Match files with presigned URLs
+  const filesToUpload = files.map((file) => {
+    const presignedUrl = urlMap.get(file.relativePath);
+    if (!presignedUrl) {
+      throw new Error(`No presigned URL for file: ${file.relativePath}`);
+    }
+    return { file, presignedUrl };
+  });
+
+  // Upload files in parallel
+  core.info('Uploading files directly to storage...');
+  const uploadResults = await uploadFilesWithPresignedUrls(filesToUpload, 10, 3);
+
+  if (uploadResults.failed.length > 0) {
+    core.warning(
+      `${uploadResults.failed.length} files failed to upload:\n` +
+        uploadResults.failed.slice(0, 10).map((f) => `  - ${f.path}: ${f.error}`).join('\n')
+    );
+
+    if (uploadResults.failed.length > uploadResults.success.length) {
+      throw new Error(
+        `Too many upload failures: ${uploadResults.failed.length}/${files.length}`
+      );
+    }
+  }
+
+  core.info(`Successfully uploaded ${uploadResults.success.length} files`);
+
+  // Finalize upload
+  const response = await finalizeUpload(inputs.apiUrl, inputs.apiKey, {
+    uploadToken: prepareResponse.uploadToken,
+  });
+
+  core.info('Upload finalized successfully');
+  core.info(`Deployment ID: ${response.deploymentId}`);
+  core.info(`Files: ${response.fileCount}`);
+  core.info(`Total size: ${response.totalSize} bytes`);
+
+  if (response.urls.sha) {
+    core.info(`SHA URL: ${response.urls.sha}`);
+  }
+  if (response.urls.preview) {
+    core.info(`Preview URL: ${response.urls.preview}`);
+  }
+
+  return {
+    response,
+    httpStatus: 201,
+  };
+}
 
 export async function uploadZip(
   zipPath: string,
