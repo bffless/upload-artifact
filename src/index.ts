@@ -2,8 +2,9 @@ import * as core from '@actions/core';
 import * as fs from 'fs';
 import { getInputs } from './inputs';
 import { createZip } from './zip';
-import { uploadZip } from './upload';
+import { uploadZip, uploadWithPresignedUrls } from './upload';
 import { writeSummary } from './summary';
+import { UploadResult } from './types';
 
 async function run(): Promise<void> {
   let zipPath: string | undefined;
@@ -22,12 +23,31 @@ async function run(): Promise<void> {
     if (inputs.proxyRuleSetName)
       core.info(`Proxy Rule Set Name: ${inputs.proxyRuleSetName}`);
 
-    // Create zip
-    const zipResult = await createZip(inputs.path, inputs.workingDirectory);
-    zipPath = zipResult.zipPath;
+    // Try presigned URL upload first (more efficient)
+    let result: UploadResult | null = null;
 
-    // Upload
-    const result = await uploadZip(zipPath, inputs);
+    try {
+      result = await uploadWithPresignedUrls(inputs);
+    } catch (error) {
+      // Log but continue to fallback
+      core.warning(
+        `Presigned URL upload failed, falling back to ZIP: ${
+          error instanceof Error ? error.message : String(error)
+        }`
+      );
+    }
+
+    // Fallback to ZIP upload if presigned URLs not supported or failed
+    if (!result) {
+      core.info('Using ZIP upload method...');
+
+      // Create zip
+      const zipResult = await createZip(inputs.path, inputs.workingDirectory);
+      zipPath = zipResult.zipPath;
+
+      // Upload
+      result = await uploadZip(zipPath, inputs);
+    }
 
     // Set outputs
     const response = result.response;

@@ -62050,6 +62050,197 @@ ZipStream.prototype.finalize = function() {
 
 /***/ }),
 
+/***/ 7822:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.requestPrepareBatchUpload = requestPrepareBatchUpload;
+exports.finalizeUpload = finalizeUpload;
+exports.uploadFileToPresignedUrl = uploadFileToPresignedUrl;
+exports.uploadFilesWithPresignedUrls = uploadFilesWithPresignedUrls;
+const core = __importStar(__nccwpck_require__(6966));
+const fs = __importStar(__nccwpck_require__(9896));
+const http = __importStar(__nccwpck_require__(8611));
+const https = __importStar(__nccwpck_require__(5692));
+const url_1 = __nccwpck_require__(7016);
+/**
+ * Request presigned URLs for batch upload
+ */
+async function requestPrepareBatchUpload(apiUrl, apiKey, request) {
+    const url = new url_1.URL('/api/deployments/prepare-batch-upload', apiUrl);
+    core.info(`Requesting presigned URLs for ${request.files.length} files...`);
+    const response = await postJson(url, request, apiKey);
+    return response;
+}
+/**
+ * Finalize a batch upload
+ */
+async function finalizeUpload(apiUrl, apiKey, request) {
+    const url = new url_1.URL('/api/deployments/finalize-upload', apiUrl);
+    core.info('Finalizing upload...');
+    const response = await postJson(url, request, apiKey);
+    return response;
+}
+/**
+ * Upload a file directly to a presigned URL
+ */
+async function uploadFileToPresignedUrl(presignedUrl, file) {
+    const url = new url_1.URL(presignedUrl);
+    const transport = url.protocol === 'https:' ? https : http;
+    return new Promise((resolve, reject) => {
+        const fileStream = fs.createReadStream(file.absolutePath);
+        const stats = fs.statSync(file.absolutePath);
+        const req = transport.request(url, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': file.contentType,
+                'Content-Length': stats.size,
+            },
+        }, (res) => {
+            if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                resolve();
+            }
+            else {
+                // Consume response body
+                const chunks = [];
+                res.on('data', (chunk) => chunks.push(chunk));
+                res.on('end', () => {
+                    const body = Buffer.concat(chunks).toString('utf-8');
+                    reject(new Error(`Upload failed for ${file.relativePath}: HTTP ${res.statusCode} - ${body.substring(0, 200)}`));
+                });
+            }
+        });
+        req.on('error', (err) => {
+            reject(new Error(`Upload failed for ${file.relativePath}: ${err.message}`));
+        });
+        fileStream.pipe(req);
+    });
+}
+/**
+ * Upload files in parallel with concurrency limit
+ */
+async function uploadFilesWithPresignedUrls(files, concurrency = 10, retries = 3) {
+    const success = [];
+    const failed = [];
+    // Process files in batches
+    for (let i = 0; i < files.length; i += concurrency) {
+        const batch = files.slice(i, i + concurrency);
+        const results = await Promise.allSettled(batch.map(async ({ file, presignedUrl }) => {
+            let lastError;
+            for (let attempt = 0; attempt < retries; attempt++) {
+                try {
+                    await uploadFileToPresignedUrl(presignedUrl, file);
+                    return file.relativePath;
+                }
+                catch (error) {
+                    lastError = error instanceof Error ? error : new Error(String(error));
+                    if (attempt < retries - 1) {
+                        // Exponential backoff: 1s, 2s, 4s
+                        const delay = Math.pow(2, attempt) * 1000;
+                        await new Promise((resolve) => setTimeout(resolve, delay));
+                    }
+                }
+            }
+            throw lastError;
+        }));
+        for (const result of results) {
+            if (result.status === 'fulfilled') {
+                success.push(result.value);
+            }
+            else {
+                const errorMatch = result.reason.message?.match(/for (.+?):/);
+                const path = errorMatch?.[1] || 'unknown';
+                failed.push({
+                    path,
+                    error: result.reason.message || 'Unknown error',
+                });
+            }
+        }
+        // Log progress
+        const completed = success.length + failed.length;
+        if (completed % 100 === 0 || completed === files.length) {
+            core.info(`Upload progress: ${completed}/${files.length} files`);
+        }
+    }
+    return { success, failed };
+}
+/**
+ * POST JSON to an API endpoint
+ */
+async function postJson(url, body, apiKey) {
+    return new Promise((resolve, reject) => {
+        const bodyStr = JSON.stringify(body);
+        const transport = url.protocol === 'https:' ? https : http;
+        const req = transport.request(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Content-Length': Buffer.byteLength(bodyStr),
+                'X-API-Key': apiKey,
+            },
+        }, (res) => {
+            const chunks = [];
+            res.on('data', (chunk) => chunks.push(chunk));
+            res.on('end', () => {
+                const responseBody = Buffer.concat(chunks).toString('utf-8');
+                if (res.statusCode && res.statusCode >= 200 && res.statusCode < 300) {
+                    try {
+                        const parsed = JSON.parse(responseBody);
+                        resolve(parsed);
+                    }
+                    catch {
+                        reject(new Error(`Failed to parse response: ${responseBody.substring(0, 200)}`));
+                    }
+                }
+                else {
+                    reject(new Error(`API request failed: HTTP ${res.statusCode} - ${responseBody.substring(0, 500)}`));
+                }
+            });
+        });
+        req.on('error', reject);
+        req.write(bodyStr);
+        req.end();
+    });
+}
+
+
+/***/ }),
+
 /***/ 8637:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -62128,6 +62319,113 @@ function getCommittedAt(sha) {
 
 /***/ }),
 
+/***/ 5713:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.walkDirectory = walkDirectory;
+exports.validateDirectory = validateDirectory;
+const fs = __importStar(__nccwpck_require__(9896));
+const path = __importStar(__nccwpck_require__(6928));
+const mimeTypes = __importStar(__nccwpck_require__(2922));
+/**
+ * Recursively walk a directory and collect all files
+ * Skips hidden files and system files
+ */
+async function walkDirectory(dirPath, basePath) {
+    const files = [];
+    await walkRecursive(dirPath, basePath, dirPath, files);
+    return files;
+}
+async function walkRecursive(currentPath, basePath, rootPath, files) {
+    const entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
+    for (const entry of entries) {
+        const fullPath = path.join(currentPath, entry.name);
+        // Skip hidden files and directories
+        if (entry.name.startsWith('.')) {
+            continue;
+        }
+        // Skip common system directories
+        if (entry.name === '__MACOSX' || entry.name === 'node_modules') {
+            continue;
+        }
+        if (entry.isDirectory()) {
+            await walkRecursive(fullPath, basePath, rootPath, files);
+        }
+        else if (entry.isFile()) {
+            const stat = await fs.promises.stat(fullPath);
+            // Build relative path that preserves directory structure
+            // relativePath includes basePath prefix: e.g., "apps/frontend/dist/index.html"
+            const pathFromRoot = path.relative(rootPath, fullPath);
+            const relativePath = path.join(basePath, pathFromRoot).replace(/\\/g, '/');
+            // Detect MIME type
+            const contentType = mimeTypes.lookup(entry.name) || 'application/octet-stream';
+            files.push({
+                absolutePath: fullPath,
+                relativePath,
+                size: stat.size,
+                contentType,
+            });
+        }
+    }
+}
+/**
+ * Validate that a directory exists and is not empty
+ */
+function validateDirectory(dirPath, workingDirectory) {
+    const resolvedPath = path.resolve(workingDirectory, dirPath);
+    if (!fs.existsSync(resolvedPath)) {
+        throw new Error(`Directory does not exist: ${resolvedPath}`);
+    }
+    const stat = fs.statSync(resolvedPath);
+    if (!stat.isDirectory()) {
+        throw new Error(`Path is not a directory: ${resolvedPath}`);
+    }
+    const contents = fs.readdirSync(resolvedPath);
+    if (contents.length === 0) {
+        throw new Error(`Directory is empty: ${resolvedPath}`);
+    }
+    return resolvedPath;
+}
+
+
+/***/ }),
+
 /***/ 6866:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
@@ -62190,11 +62488,24 @@ async function run() {
             core.info(`Committed At: ${inputs.committedAt}`);
         if (inputs.proxyRuleSetName)
             core.info(`Proxy Rule Set Name: ${inputs.proxyRuleSetName}`);
-        // Create zip
-        const zipResult = await (0, zip_1.createZip)(inputs.path, inputs.workingDirectory);
-        zipPath = zipResult.zipPath;
-        // Upload
-        const result = await (0, upload_1.uploadZip)(zipPath, inputs);
+        // Try presigned URL upload first (more efficient)
+        let result = null;
+        try {
+            result = await (0, upload_1.uploadWithPresignedUrls)(inputs);
+        }
+        catch (error) {
+            // Log but continue to fallback
+            core.warning(`Presigned URL upload failed, falling back to ZIP: ${error instanceof Error ? error.message : String(error)}`);
+        }
+        // Fallback to ZIP upload if presigned URLs not supported or failed
+        if (!result) {
+            core.info('Using ZIP upload method...');
+            // Create zip
+            const zipResult = await (0, zip_1.createZip)(inputs.path, inputs.workingDirectory);
+            zipPath = zipResult.zipPath;
+            // Upload
+            result = await (0, upload_1.uploadZip)(zipPath, inputs);
+        }
         // Set outputs
         const response = result.response;
         core.setOutput('deployment-id', response.deploymentId);
@@ -62461,6 +62772,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.uploadWithPresignedUrls = uploadWithPresignedUrls;
 exports.uploadZip = uploadZip;
 const core = __importStar(__nccwpck_require__(6966));
 const fs = __importStar(__nccwpck_require__(9896));
@@ -62469,6 +62781,88 @@ const https = __importStar(__nccwpck_require__(5692));
 const path = __importStar(__nccwpck_require__(6928));
 const form_data_1 = __importDefault(__nccwpck_require__(2031));
 const url_1 = __nccwpck_require__(7016);
+const files_1 = __nccwpck_require__(5713);
+const api_1 = __nccwpck_require__(7822);
+/**
+ * Upload files using presigned URLs (direct to storage)
+ * Returns null if presigned URLs are not supported (fallback to ZIP upload)
+ */
+async function uploadWithPresignedUrls(inputs) {
+    // Validate and resolve directory
+    const resolvedPath = (0, files_1.validateDirectory)(inputs.path, inputs.workingDirectory);
+    core.info(`Scanning directory: ${resolvedPath}`);
+    // Walk directory and collect files
+    const files = await (0, files_1.walkDirectory)(resolvedPath, inputs.path);
+    if (files.length === 0) {
+        throw new Error('No files found to upload');
+    }
+    core.info(`Found ${files.length} files to upload`);
+    // Request presigned URLs
+    const prepareResponse = await (0, api_1.requestPrepareBatchUpload)(inputs.apiUrl, inputs.apiKey, {
+        repository: inputs.repository,
+        commitSha: inputs.commitSha,
+        branch: inputs.branch,
+        alias: inputs.alias,
+        basePath: inputs.basePath,
+        description: inputs.description,
+        tags: inputs.tags,
+        proxyRuleSetName: inputs.proxyRuleSetName,
+        proxyRuleSetId: inputs.proxyRuleSetId,
+        files: files.map((f) => ({
+            path: f.relativePath,
+            size: f.size,
+            contentType: f.contentType,
+        })),
+    });
+    // Check if presigned URLs are supported
+    if (!prepareResponse.presignedUrlsSupported) {
+        core.info('Storage does not support presigned URLs, falling back to ZIP upload');
+        return null;
+    }
+    if (!prepareResponse.files || !prepareResponse.uploadToken) {
+        throw new Error('Invalid response from prepare-batch-upload');
+    }
+    core.info(`Received ${prepareResponse.files.length} presigned URLs (expires: ${prepareResponse.expiresAt})`);
+    // Create lookup map for presigned URLs
+    const urlMap = new Map(prepareResponse.files.map((f) => [f.path, f.presignedUrl]));
+    // Match files with presigned URLs
+    const filesToUpload = files.map((file) => {
+        const presignedUrl = urlMap.get(file.relativePath);
+        if (!presignedUrl) {
+            throw new Error(`No presigned URL for file: ${file.relativePath}`);
+        }
+        return { file, presignedUrl };
+    });
+    // Upload files in parallel
+    core.info('Uploading files directly to storage...');
+    const uploadResults = await (0, api_1.uploadFilesWithPresignedUrls)(filesToUpload, 10, 3);
+    if (uploadResults.failed.length > 0) {
+        core.warning(`${uploadResults.failed.length} files failed to upload:\n` +
+            uploadResults.failed.slice(0, 10).map((f) => `  - ${f.path}: ${f.error}`).join('\n'));
+        if (uploadResults.failed.length > uploadResults.success.length) {
+            throw new Error(`Too many upload failures: ${uploadResults.failed.length}/${files.length}`);
+        }
+    }
+    core.info(`Successfully uploaded ${uploadResults.success.length} files`);
+    // Finalize upload
+    const response = await (0, api_1.finalizeUpload)(inputs.apiUrl, inputs.apiKey, {
+        uploadToken: prepareResponse.uploadToken,
+    });
+    core.info('Upload finalized successfully');
+    core.info(`Deployment ID: ${response.deploymentId}`);
+    core.info(`Files: ${response.fileCount}`);
+    core.info(`Total size: ${response.totalSize} bytes`);
+    if (response.urls.sha) {
+        core.info(`SHA URL: ${response.urls.sha}`);
+    }
+    if (response.urls.preview) {
+        core.info(`Preview URL: ${response.urls.preview}`);
+    }
+    return {
+        response,
+        httpStatus: 201,
+    };
+}
 async function uploadZip(zipPath, inputs) {
     const url = new url_1.URL('/api/deployments/zip', inputs.apiUrl);
     core.info(`Uploading to ${url.toString()}...`);

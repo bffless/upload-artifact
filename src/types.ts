@@ -47,3 +47,41 @@ export interface UploadResult {
   response: UploadResponse;
   httpStatus: number;
 }
+
+// Pre-signed URL Batch Upload Types
+
+export interface BatchUploadFile {
+  path: string;
+  size: number;
+  contentType: string;
+}
+
+export interface PrepareBatchUploadRequest {
+  repository: string;
+  commitSha: string;
+  branch?: string;
+  alias?: string;
+  basePath?: string;
+  description?: string;
+  tags?: string;
+  proxyRuleSetName?: string;
+  proxyRuleSetId?: string;
+  files: BatchUploadFile[];
+}
+
+export interface PresignedUrlInfo {
+  path: string;
+  presignedUrl: string;
+  storageKey: string;
+}
+
+export interface PrepareBatchUploadResponse {
+  presignedUrlsSupported: boolean;
+  uploadToken?: string;
+  expiresAt?: string;
+  files?: PresignedUrlInfo[];
+}
+
+export interface FinalizeUploadRequest {
+  uploadToken: string;
+}
