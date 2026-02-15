@@ -1,6 +1,6 @@
 {
   "name": "@bffless/upload-artifact",
-  "version": "1.0.1",
+  "version": "1.0.0",
   "description": "GitHub Action to zip and upload build artifacts to BFFLESS",
   "main": "dist/index.js",
   "scripts": {
