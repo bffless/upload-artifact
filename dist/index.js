@@ -62527,9 +62527,12 @@ async function run() {
         }
         // Write summary
         await (0, summary_1.writeSummary)(inputs, response);
+        // Force exit to close any dangling HTTP connections from presigned URL uploads
+        process.exit(0);
     }
     catch (error) {
         core.setFailed(error instanceof Error ? error.message : 'Unknown error occurred');
+        process.exit(1);
     }
     finally {
         // Clean up temp zip
