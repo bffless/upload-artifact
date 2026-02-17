@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/bffless/upload-artifact/compare/v1.1.0...v1.1.1) (2026-02-17)
+
+
+### Bug Fixes
+
+* add process.exit to prevent hanging on dangling HTTP connections ([0e56371](https://github.com/bffless/upload-artifact/commit/0e563710770ac645e005babe9910313a1a8f8d14))
+* add process.exit to prevent hanging on HTTP connections ([9867b06](https://github.com/bffless/upload-artifact/commit/9867b06c41cc1e0e202b61686b25827c9349232f))
+
 ## [1.1.0](https://github.com/bffless/upload-artifact/compare/v1.0.0...v1.1.0) (2026-02-15)
 
 
