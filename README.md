@@ -1,6 +1,6 @@
 # bffless/upload-artifact
 
-GitHub Action to zip and upload build artifacts to a [BFFLESS](https://bffless.com) static asset hosting platform.
+[BFFLESS](https://bffless.com) is a static asset hosting platform for frontend builds. This GitHub Action zips and uploads build artifacts to your BFFLESS instance.
 
 ## Quick Start
 
