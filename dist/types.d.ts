@@ -1,3 +1,4 @@
+import { UploadResponse } from '@bffless/artifact-client';
 export interface ActionInputs {
     path: string;
     apiUrl: string;
@@ -23,54 +24,8 @@ export interface GitContext {
     branch: string;
     committedAt?: string;
 }
-export interface DeploymentUrls {
-    sha?: string;
-    alias?: string;
-    preview?: string;
-    branch?: string;
-}
-export interface UploadResponse {
-    deploymentId: string;
-    repository?: string;
-    commitSha: string;
-    branch?: string;
-    fileCount: number;
-    totalSize: number;
-    aliases?: string[];
-    urls: DeploymentUrls;
-}
 export interface UploadResult {
     response: UploadResponse;
     httpStatus: number;
 }
-export interface BatchUploadFile {
-    path: string;
-    size: number;
-    contentType: string;
-}
-export interface PrepareBatchUploadRequest {
-    repository: string;
-    commitSha: string;
-    branch?: string;
-    alias?: string;
-    basePath?: string;
-    description?: string;
-    tags?: string;
-    proxyRuleSetName?: string;
-    proxyRuleSetId?: string;
-    files: BatchUploadFile[];
-}
-export interface PresignedUrlInfo {
-    path: string;
-    presignedUrl: string;
-    storageKey: string;
-}
-export interface PrepareBatchUploadResponse {
-    presignedUrlsSupported: boolean;
-    uploadToken?: string;
-    expiresAt?: string;
-    files?: PresignedUrlInfo[];
-}
-export interface FinalizeUploadRequest {
-    uploadToken: string;
-}
+export { UploadResponse, DeploymentUrls } from '@bffless/artifact-client';

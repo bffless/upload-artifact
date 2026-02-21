@@ -11,7 +11,7 @@ import {
   requestPrepareBatchUpload,
   uploadFilesWithPresignedUrls,
   finalizeUpload,
-} from './api';
+} from '@bffless/artifact-client';
 
 /**
  * Upload files using presigned URLs (direct to storage)
