@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.0](https://github.com/bffless/upload-artifact/compare/v1.1.1...v1.2.0) (2026-02-21)
+
+
+### Features
+
+* uses @bffless/artifact-client ([6ebfc2b](https://github.com/bffless/upload-artifact/commit/6ebfc2b73501fbd7b8481b3538d182b9277791cb))
+
 ## [1.1.1](https://github.com/bffless/upload-artifact/compare/v1.1.0...v1.1.1) (2026-02-17)
 
 
