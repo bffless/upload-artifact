@@ -63074,9 +63074,6 @@ async function writeSummary(inputs, response) {
     if (response.urls.preview) {
         rows.push(['Preview URL', response.urls.preview]);
     }
-    if (response.urls.branch) {
-        rows.push(['Branch URL', response.urls.branch]);
-    }
     const tableMarkdown = rows
         .map(([key, value]) => `| **${key}** | ${value} |`)
         .join('\n');

@@ -45,10 +45,9 @@ describe('writeSummary', () => {
       fileCount: 10,
       totalSize: 54321,
       urls: {
-        sha: 'https://assets.example.com/public/owner/repo/abc123/',
+        sha: 'https://assets.example.com/repo/owner/repo/abc123',
         alias:
           'https://assets.example.com/public/owner/repo/alias/production/',
-        branch: 'https://assets.example.com/public/owner/repo/branch/main/',
       },
     };
 
@@ -65,7 +64,6 @@ describe('writeSummary', () => {
     expect(content).toContain('53.05 KB');
     expect(content).toContain('SHA URL');
     expect(content).toContain('Alias URL');
-    expect(content).toContain('Branch URL');
     expect(mockWrite).toHaveBeenCalled();
   });
 
