@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/bffless/upload-artifact/compare/v1.2.0...v1.2.1) (2026-02-22)
+
+
+### Bug Fixes
+
+* removes branch url ([ceb651f](https://github.com/bffless/upload-artifact/commit/ceb651f357eaefa8da767be94f538f6c589863e7))
+
 ## [1.2.0](https://github.com/bffless/upload-artifact/compare/v1.1.1...v1.2.0) (2026-02-21)
 
 
