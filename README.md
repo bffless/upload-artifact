@@ -16,7 +16,7 @@ This is the counterpart to [bffless/download-artifact](https://github.com/bffles
 
 ## Examples
 
-### PR Preview
+### PR Preview with Comment
 
 ```yaml
 - uses: bffless/upload-artifact@v1
@@ -26,8 +26,26 @@ This is the counterpart to [bffless/download-artifact](https://github.com/bffles
     api-key: ${{ secrets.ASSET_HOST_KEY }}
     alias: preview
     description: 'PR #${{ github.event.pull_request.number }} preview'
-    proxy-rule-set-name: controlplane
+    pr-comment: true
+    github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+This will post a comment on the PR with deployment details:
+
+> ## 🚀 BFFLESS Deployment
+>
+> **Alias:** `preview`
+>
+> | Property | Value |
+> |----------|-------|
+> | **Preview** | [e85879-portfoli-ee59-02bc.example.com](https://e85879-portfoli-ee59-02bc.example.com/) |
+> | **Commit** | `e85879d` |
+> | **Files** | 4 |
+> | **Size** | 241.91 KB |
+>
+> [View in Admin →](https://admin.example.com/repo/owner/repo/e85879d...)
+
+The comment is automatically updated on subsequent pushes to the same PR.
 
 ### Production Deploy
 
@@ -94,6 +112,9 @@ This is the counterpart to [bffless/download-artifact](https://github.com/bffles
 | `summary`             | no       | `'true'`               | Write GitHub Step Summary             |
 | `summary-title`       | no       | `'Deployment Summary'` | Summary heading                       |
 | `working-directory`   | no       | `'.'`                  | Working directory for relative paths  |
+| `pr-comment`          | no       | `'false'`              | Post/update a comment on the PR       |
+| `comment-header`      | no       | `'🚀 BFFLESS Deployment'` | Custom header for the PR comment   |
+| `github-token`        | no       | `GITHUB_TOKEN` env     | GitHub token for posting PR comments  |
 
 Only 3 required inputs. Everything else auto-derives from GitHub context.
 
@@ -118,7 +139,15 @@ Only 3 required inputs. Everything else auto-derives from GitHub context.
 3. **Uploads** the zip via multipart POST to `/api/deployments/zip`
 4. **Sets outputs** from the API response (URLs, deployment ID, file count)
 5. **Writes a Step Summary** with a formatted table of deployment info
-6. **Cleans up** the temporary zip file
+6. **Posts PR comment** (if `pr-comment: true`) with preview URL and details
+7. **Cleans up** the temporary zip file
+
+### PR Comments
+
+When `pr-comment: true`, the action posts a comment on the pull request with deployment details. Comments are identified by a unique marker based on the `alias` or `base-path`, allowing:
+
+- **Automatic updates**: Re-running the action updates the existing comment instead of creating duplicates
+- **Multiple deployments**: Different aliases/paths create separate comments on the same PR
 
 ### Auto-Detection
 
