@@ -19,16 +19,25 @@ This is the counterpart to [bffless/download-artifact](https://github.com/bffles
 ### PR Preview with Comment
 
 ```yaml
-- uses: bffless/upload-artifact@v1
-  with:
-    path: apps/console-ui/dist
-    api-url: ${{ vars.ASSET_HOST_URL }}
-    api-key: ${{ secrets.ASSET_HOST_KEY }}
-    alias: preview
-    description: 'PR #${{ github.event.pull_request.number }} preview'
-    pr-comment: true
-    github-token: ${{ secrets.GITHUB_TOKEN }}
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write  # Required for PR comments
+    steps:
+      - uses: bffless/upload-artifact@v1
+        with:
+          path: apps/console-ui/dist
+          api-url: ${{ vars.ASSET_HOST_URL }}
+          api-key: ${{ secrets.ASSET_HOST_KEY }}
+          alias: preview
+          description: 'PR #${{ github.event.pull_request.number }} preview'
+          pr-comment: true
+          github-token: ${{ secrets.GITHUB_TOKEN }}
 ```
+
+> **Note:** The `pull-requests: write` permission is required for the action to post comments.
 
 This will post a comment on the PR with deployment details:
 
