@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.0](https://github.com/bffless/upload-artifact/compare/v1.2.1...v1.3.0) (2026-02-28)
+
+
+### Features
+
+* pr-comment ([e0076d6](https://github.com/bffless/upload-artifact/commit/e0076d62792a7dcc070d33eeca60bf1cd7dd7410))
+
 ## [1.2.1](https://github.com/bffless/upload-artifact/compare/v1.2.0...v1.2.1) (2026-02-22)
 
 
