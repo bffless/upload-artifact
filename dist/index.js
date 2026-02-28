@@ -62839,6 +62839,7 @@ const inputs_1 = __nccwpck_require__(6713);
 const zip_1 = __nccwpck_require__(3781);
 const upload_1 = __nccwpck_require__(1773);
 const summary_1 = __nccwpck_require__(6330);
+const pr_comment_1 = __nccwpck_require__(2858);
 async function run() {
     let zipPath;
     try {
@@ -62895,6 +62896,8 @@ async function run() {
         }
         // Write summary
         await (0, summary_1.writeSummary)(inputs, response);
+        // Post PR comment if enabled
+        await (0, pr_comment_1.writePrComment)(inputs, response);
         // Force exit to close any dangling HTTP connections from presigned URL uploads
         process.exit(0);
     }
@@ -62984,6 +62987,10 @@ function getInputs() {
     const summaryInput = core.getInput('summary') || 'true';
     const summary = summaryInput.toLowerCase() !== 'false';
     const summaryTitle = core.getInput('summary-title') || 'Deployment Summary';
+    const prCommentInput = core.getInput('pr-comment') || 'false';
+    const prComment = prCommentInput.toLowerCase() === 'true';
+    const commentHeader = core.getInput('comment-header') || undefined;
+    const githubToken = core.getInput('github-token') || process.env.GITHUB_TOKEN || undefined;
     return {
         path,
         apiUrl,
@@ -63002,7 +63009,160 @@ function getInputs() {
         summary,
         summaryTitle,
         workingDirectory,
+        prComment,
+        commentHeader,
+        githubToken,
     };
+}
+
+
+/***/ }),
+
+/***/ 2858:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.writePrComment = writePrComment;
+const core = __importStar(__nccwpck_require__(6966));
+const github = __importStar(__nccwpck_require__(4903));
+/**
+ * Generate a unique marker for this deployment to enable comment updates.
+ * Uses alias or basePath to identify the deployment.
+ */
+function getCommentMarker(inputs) {
+    const identifier = inputs.alias || inputs.basePath || 'default';
+    return `<!-- bffless-deploy:${identifier} -->`;
+}
+/**
+ * Format bytes to human readable string
+ */
+function formatBytes(bytes) {
+    if (bytes === 0)
+        return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+}
+/**
+ * Build the comment body with deployment details
+ */
+function buildCommentBody(inputs, response, marker) {
+    const header = inputs.commentHeader || '🚀 BFFLESS Deployment';
+    const shortSha = response.commitSha.substring(0, 7);
+    let body = `${marker}\n## ${header}\n\n`;
+    // Add deployment identifier if alias or basePath specified
+    if (inputs.alias) {
+        body += `**Alias:** \`${inputs.alias}\`\n\n`;
+    }
+    else if (inputs.basePath && inputs.basePath !== '/') {
+        body += `**Path:** \`${inputs.basePath}\`\n\n`;
+    }
+    body += `| Property | Value |\n|----------|-------|\n`;
+    // Preview URL is the main attraction
+    if (response.urls.preview) {
+        body += `| **Preview** | [${response.urls.preview}](${response.urls.preview}) |\n`;
+    }
+    body += `| **Commit** | \`${shortSha}\` |\n`;
+    body += `| **Files** | ${response.fileCount} |\n`;
+    body += `| **Size** | ${formatBytes(response.totalSize)} |\n`;
+    // Add link to admin if SHA URL available
+    if (response.urls.sha) {
+        body += `\n[View in Admin →](${response.urls.sha})`;
+    }
+    return body;
+}
+/**
+ * Post or update a PR comment with deployment details
+ */
+async function writePrComment(inputs, response) {
+    if (!inputs.prComment) {
+        return;
+    }
+    // Check if we're in a PR context
+    const context = github.context;
+    const prNumber = context.payload.pull_request?.number;
+    if (!prNumber) {
+        core.info('Not in a PR context, skipping PR comment');
+        return;
+    }
+    if (!inputs.githubToken) {
+        core.warning('No GitHub token provided, cannot post PR comment');
+        return;
+    }
+    const marker = getCommentMarker(inputs);
+    const body = buildCommentBody(inputs, response, marker);
+    const octokit = github.getOctokit(inputs.githubToken);
+    const { owner, repo } = context.repo;
+    try {
+        // Find existing comment with this marker
+        const { data: comments } = await octokit.rest.issues.listComments({
+            owner,
+            repo,
+            issue_number: prNumber,
+            per_page: 100,
+        });
+        const existingComment = comments.find((comment) => comment.body?.includes(marker));
+        if (existingComment) {
+            // Update existing comment
+            await octokit.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: existingComment.id,
+                body,
+            });
+            core.info(`Updated PR comment #${existingComment.id}`);
+        }
+        else {
+            // Create new comment
+            const { data: newComment } = await octokit.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body,
+            });
+            core.info(`Created PR comment #${newComment.id}`);
+        }
+    }
+    catch (error) {
+        // Don't fail the action if comment fails
+        core.warning(`Failed to post PR comment: ${error instanceof Error ? error.message : String(error)}`);
+    }
 }
 
 
@@ -63066,13 +63226,13 @@ async function writeSummary(inputs, response) {
     rows.push(['Files', String(response.fileCount)]);
     rows.push(['Total Size', formatBytes(response.totalSize)]);
     if (response.urls.sha) {
-        rows.push(['SHA URL', response.urls.sha]);
+        rows.push(['SHA URL', `[${response.urls.sha}](${response.urls.sha})`]);
     }
     if (response.urls.alias) {
-        rows.push(['Alias URL', response.urls.alias]);
+        rows.push(['Alias URL', `[${response.urls.alias}](${response.urls.alias})`]);
     }
     if (response.urls.preview) {
-        rows.push(['Preview URL', response.urls.preview]);
+        rows.push(['Preview URL', `[${response.urls.preview}](${response.urls.preview})`]);
     }
     const tableMarkdown = rows
         .map(([key, value]) => `| **${key}** | ${value} |`)

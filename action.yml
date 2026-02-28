@@ -62,6 +62,16 @@ inputs:
     description: 'Working directory for resolving relative paths'
     required: false
     default: '.'
+  pr-comment:
+    description: 'Post/update a comment on the PR with deployment details'
+    required: false
+    default: 'false'
+  comment-header:
+    description: 'Custom header for the PR comment (default: "🚀 BFFLESS Deployment")'
+    required: false
+  github-token:
+    description: 'GitHub token for posting PR comments (defaults to github.token)'
+    required: false
 
 outputs:
   deployment-url:

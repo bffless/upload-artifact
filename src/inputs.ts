@@ -29,6 +29,11 @@ export function getInputs(): ActionInputs {
   const summary = summaryInput.toLowerCase() !== 'false';
   const summaryTitle = core.getInput('summary-title') || 'Deployment Summary';
 
+  const prCommentInput = core.getInput('pr-comment') || 'false';
+  const prComment = prCommentInput.toLowerCase() === 'true';
+  const commentHeader = core.getInput('comment-header') || undefined;
+  const githubToken = core.getInput('github-token') || process.env.GITHUB_TOKEN || undefined;
+
   return {
     path,
     apiUrl,
@@ -47,5 +52,8 @@ export function getInputs(): ActionInputs {
     summary,
     summaryTitle,
     workingDirectory,
+    prComment,
+    commentHeader,
+    githubToken,
   };
 }

@@ -26,13 +26,13 @@ export async function writeSummary(
   rows.push(['Total Size', formatBytes(response.totalSize)]);
 
   if (response.urls.sha) {
-    rows.push(['SHA URL', response.urls.sha]);
+    rows.push(['SHA URL', `[${response.urls.sha}](${response.urls.sha})`]);
   }
   if (response.urls.alias) {
-    rows.push(['Alias URL', response.urls.alias]);
+    rows.push(['Alias URL', `[${response.urls.alias}](${response.urls.alias})`]);
   }
   if (response.urls.preview) {
-    rows.push(['Preview URL', response.urls.preview]);
+    rows.push(['Preview URL', `[${response.urls.preview}](${response.urls.preview})`]);
   }
 
   const tableMarkdown = rows

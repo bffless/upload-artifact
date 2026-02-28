@@ -4,6 +4,7 @@ import { getInputs } from './inputs';
 import { createZip } from './zip';
 import { uploadZip, uploadWithPresignedUrls } from './upload';
 import { writeSummary } from './summary';
+import { writePrComment } from './pr-comment';
 import { UploadResult } from './types';
 
 async function run(): Promise<void> {
@@ -72,6 +73,9 @@ async function run(): Promise<void> {
 
     // Write summary
     await writeSummary(inputs, response);
+
+    // Post PR comment if enabled
+    await writePrComment(inputs, response);
 
     // Force exit to close any dangling HTTP connections from presigned URL uploads
     process.exit(0);

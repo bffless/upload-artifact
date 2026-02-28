@@ -18,6 +18,9 @@ export interface ActionInputs {
   summary: boolean;
   summaryTitle: string;
   workingDirectory: string;
+  prComment: boolean;
+  commentHeader?: string;
+  githubToken?: string;
 }
 
 export interface GitContext {
