@@ -87,6 +87,45 @@ describe('getInputs', () => {
     expect(result.basePath).toBe('/custom/path');
   });
 
+  it.each(['./', '.', '  ./  ', ' . '])(
+    'should normalize basePath %j to "/" and warn',
+    (input) => {
+      const mockGetInput = vi.mocked(core.getInput);
+      mockGetInput.mockImplementation((name: string) => {
+        const inputs: Record<string, string> = {
+          'path': 'coverage',
+          'api-url': 'https://assets.example.com',
+          'api-key': 'test-key-123',
+          'base-path': input,
+        };
+        return inputs[name] || '';
+      });
+
+      const result = getInputs();
+      expect(result.basePath).toBe('/');
+      expect(core.warning).toHaveBeenCalledWith(
+        expect.stringContaining('does not normalize'),
+      );
+    },
+  );
+
+  it('should leave a plain "/" basePath alone without warning', () => {
+    const mockGetInput = vi.mocked(core.getInput);
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        'path': 'coverage',
+        'api-url': 'https://assets.example.com',
+        'api-key': 'test-key-123',
+        'base-path': '/',
+      };
+      return inputs[name] || '';
+    });
+
+    const result = getInputs();
+    expect(result.basePath).toBe('/');
+    expect(core.warning).not.toHaveBeenCalled();
+  });
+
   it('should parse optional inputs', () => {
     const mockGetInput = vi.mocked(core.getInput);
     mockGetInput.mockImplementation((name: string) => {

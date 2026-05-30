@@ -2,6 +2,21 @@ import * as core from '@actions/core';
 import { ActionInputs } from './types';
 import { deriveContext } from './context';
 
+// The BFFless serving layer only strips leading/trailing slashes when normalizing
+// the alias basePath. "./" or "." survive that and get prepended literally to every
+// asset lookup, breaking all requests. Rewrite them to "/" so the alias ends up with
+// an empty prefix, which is what users mean when they pass "./".
+export function normalizeBasePath(raw: string): string {
+  const trimmed = raw.trim();
+  if (trimmed === './' || trimmed === '.') {
+    core.warning(
+      `base-path: "${raw}" is being rewritten to "/" because the BFFless serving layer does not normalize "./" and would 404 on every request. Update your workflow to use "/" explicitly.`,
+    );
+    return '/';
+  }
+  return trimmed;
+}
+
 export function getInputs(): ActionInputs {
   const path = core.getInput('path', { required: true });
   const apiUrl = core.getInput('api-url', { required: true });
@@ -19,7 +34,9 @@ export function getInputs(): ActionInputs {
   const isPublic = core.getInput('is-public') || 'true';
   const alias = core.getInput('alias') || undefined;
   const basePathInput = core.getInput('base-path');
-  const basePath = basePathInput || `/${path}`;
+  const basePath = basePathInput
+    ? normalizeBasePath(basePathInput)
+    : `/${path}`;
   const description = core.getInput('description') || undefined;
   const proxyRuleSetName = core.getInput('proxy-rule-set-name') || undefined;
   const proxyRuleSetId = core.getInput('proxy-rule-set-id') || undefined;
