@@ -33,7 +33,7 @@ inputs:
     description: 'Deployment alias (e.g., "production", "preview")'
     required: false
   base-path:
-    description: 'Base path prefix in zip (default: auto-derived from path input as /<path>)'
+    description: 'URL prefix the alias serves files under (default: auto-derived from path input as /<path>). Use "/" to make files appear with the source folder visible in the URL. Note: "./" and "." are rewritten to "/" with a warning, since the serving layer does not normalize them.'
     required: false
   committed-at:
     description: 'ISO 8601 commit timestamp (default: auto-detected via git log)'
