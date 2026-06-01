@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.0](https://github.com/bffless/upload-artifact/compare/v1.3.1...v1.4.0) (2026-06-01)
+
+
+### Features
+
+* support multiple proxy rule sets via plural inputs ([cc2dfbe](https://github.com/bffless/upload-artifact/commit/cc2dfbe83d6e2cfc53ce2eb0831e9c95864c9bfb))
+* support multiple proxy rule sets via plural inputs ([2549f37](https://github.com/bffless/upload-artifact/commit/2549f3772f925cc4d0c1659d4d38085e95ff2013))
+
 ## [1.3.1](https://github.com/bffless/upload-artifact/compare/v1.3.0...v1.3.1) (2026-05-30)
 
 
