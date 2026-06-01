@@ -3449,7 +3449,7 @@ function copyFile(srcFile, destFile, force) {
 
 /***/ }),
 
-/***/ 681:
+/***/ 3102:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -3499,7 +3499,7 @@ const path = __importStar(__nccwpck_require__(6928));
 const http = __importStar(__nccwpck_require__(8611));
 const https = __importStar(__nccwpck_require__(5692));
 const url_1 = __nccwpck_require__(7016);
-const http_1 = __nccwpck_require__(9281);
+const http_1 = __nccwpck_require__(7474);
 /**
  * Request presigned URLs for batch download
  */
@@ -3714,7 +3714,7 @@ async function downloadFilesDirect(apiUrl, apiKey, files, outputDir, params, con
 
 /***/ }),
 
-/***/ 9281:
+/***/ 7474:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -3798,7 +3798,7 @@ async function postJson(url, body, apiKey) {
 
 /***/ }),
 
-/***/ 4933:
+/***/ 7900:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -3820,19 +3820,19 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.uploadFilesWithPresignedUrls = exports.uploadFileToPresignedUrl = exports.finalizeUpload = exports.requestPrepareBatchUpload = exports.downloadFilesDirect = exports.downloadFilesWithPresignedUrls = exports.downloadFileDirect = exports.downloadFileFromPresignedUrl = exports.requestPrepareBatchDownload = exports.postJson = void 0;
 // Types
-__exportStar(__nccwpck_require__(3708), exports);
+__exportStar(__nccwpck_require__(153), exports);
 // HTTP utilities
-var http_1 = __nccwpck_require__(9281);
+var http_1 = __nccwpck_require__(7474);
 Object.defineProperty(exports, "postJson", ({ enumerable: true, get: function () { return http_1.postJson; } }));
 // Download functions
-var download_1 = __nccwpck_require__(681);
+var download_1 = __nccwpck_require__(3102);
 Object.defineProperty(exports, "requestPrepareBatchDownload", ({ enumerable: true, get: function () { return download_1.requestPrepareBatchDownload; } }));
 Object.defineProperty(exports, "downloadFileFromPresignedUrl", ({ enumerable: true, get: function () { return download_1.downloadFileFromPresignedUrl; } }));
 Object.defineProperty(exports, "downloadFileDirect", ({ enumerable: true, get: function () { return download_1.downloadFileDirect; } }));
 Object.defineProperty(exports, "downloadFilesWithPresignedUrls", ({ enumerable: true, get: function () { return download_1.downloadFilesWithPresignedUrls; } }));
 Object.defineProperty(exports, "downloadFilesDirect", ({ enumerable: true, get: function () { return download_1.downloadFilesDirect; } }));
 // Upload functions
-var upload_1 = __nccwpck_require__(2088);
+var upload_1 = __nccwpck_require__(5247);
 Object.defineProperty(exports, "requestPrepareBatchUpload", ({ enumerable: true, get: function () { return upload_1.requestPrepareBatchUpload; } }));
 Object.defineProperty(exports, "finalizeUpload", ({ enumerable: true, get: function () { return upload_1.finalizeUpload; } }));
 Object.defineProperty(exports, "uploadFileToPresignedUrl", ({ enumerable: true, get: function () { return upload_1.uploadFileToPresignedUrl; } }));
@@ -3841,7 +3841,7 @@ Object.defineProperty(exports, "uploadFilesWithPresignedUrls", ({ enumerable: tr
 
 /***/ }),
 
-/***/ 3708:
+/***/ 153:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -3854,7 +3854,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 /***/ }),
 
-/***/ 2088:
+/***/ 5247:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -3902,7 +3902,7 @@ const fs = __importStar(__nccwpck_require__(9896));
 const http = __importStar(__nccwpck_require__(8611));
 const https = __importStar(__nccwpck_require__(5692));
 const url_1 = __nccwpck_require__(7016);
-const http_1 = __nccwpck_require__(9281);
+const http_1 = __nccwpck_require__(7474);
 /**
  * Request presigned URLs for batch upload
  */
@@ -62962,6 +62962,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.splitCsv = splitCsv;
 exports.normalizeBasePath = normalizeBasePath;
 exports.getInputs = getInputs;
 const core = __importStar(__nccwpck_require__(6966));
@@ -62970,6 +62971,16 @@ const context_1 = __nccwpck_require__(8637);
 // the alias basePath. "./" or "." survive that and get prepended literally to every
 // asset lookup, breaking all requests. Rewrite them to "/" so the alias ends up with
 // an empty prefix, which is what users mean when they pass "./".
+// Split a comma-separated input into a trimmed, non-empty string array.
+function splitCsv(raw) {
+    if (!raw)
+        return undefined;
+    const parts = raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    return parts.length > 0 ? parts : undefined;
+}
 function normalizeBasePath(raw) {
     const trimmed = raw.trim();
     if (trimmed === './' || trimmed === '.') {
@@ -62998,6 +63009,8 @@ function getInputs() {
     const description = core.getInput('description') || undefined;
     const proxyRuleSetName = core.getInput('proxy-rule-set-name') || undefined;
     const proxyRuleSetId = core.getInput('proxy-rule-set-id') || undefined;
+    const proxyRuleSetNames = splitCsv(core.getInput('proxy-rule-set-names'));
+    const proxyRuleSetIds = splitCsv(core.getInput('proxy-rule-set-ids'));
     const tags = core.getInput('tags') || undefined;
     const summaryInput = core.getInput('summary') || 'true';
     const summary = summaryInput.toLowerCase() !== 'false';
@@ -63020,6 +63033,8 @@ function getInputs() {
         description,
         proxyRuleSetName,
         proxyRuleSetId,
+        proxyRuleSetNames,
+        proxyRuleSetIds,
         tags,
         summary,
         summaryTitle,
@@ -63325,7 +63340,7 @@ const path = __importStar(__nccwpck_require__(6928));
 const form_data_1 = __importDefault(__nccwpck_require__(2031));
 const url_1 = __nccwpck_require__(7016);
 const files_1 = __nccwpck_require__(5713);
-const artifact_client_1 = __nccwpck_require__(4933);
+const artifact_client_1 = __nccwpck_require__(7900);
 /**
  * Upload files using presigned URLs (direct to storage)
  * Returns null if presigned URLs are not supported (fallback to ZIP upload)
@@ -63351,6 +63366,8 @@ async function uploadWithPresignedUrls(inputs) {
         tags: inputs.tags,
         proxyRuleSetName: inputs.proxyRuleSetName,
         proxyRuleSetId: inputs.proxyRuleSetId,
+        proxyRuleSetNames: inputs.proxyRuleSetNames?.join(','),
+        proxyRuleSetIds: inputs.proxyRuleSetIds?.join(','),
         files: files.map((f) => ({
             path: f.relativePath,
             size: f.size,
@@ -63387,9 +63404,15 @@ async function uploadWithPresignedUrls(inputs) {
         }
     }
     core.info(`Successfully uploaded ${uploadResults.success.length} files`);
-    // Finalize upload
+    // Finalize upload — pass proxy rule sets on finalize as well, since the
+    // finalize body is authoritative for the alias wiring (overrides anything
+    // carried over from prepare).
     const response = await (0, artifact_client_1.finalizeUpload)(inputs.apiUrl, inputs.apiKey, {
         uploadToken: prepareResponse.uploadToken,
+        proxyRuleSetName: inputs.proxyRuleSetName,
+        proxyRuleSetId: inputs.proxyRuleSetId,
+        proxyRuleSetNames: inputs.proxyRuleSetNames?.join(','),
+        proxyRuleSetIds: inputs.proxyRuleSetIds?.join(','),
     });
     core.info('Upload finalized successfully');
     core.info(`Deployment ID: ${response.deploymentId}`);
@@ -63435,6 +63458,12 @@ async function uploadZip(zipPath, inputs) {
     }
     if (inputs.proxyRuleSetId) {
         form.append('proxyRuleSetId', inputs.proxyRuleSetId);
+    }
+    if (inputs.proxyRuleSetNames && inputs.proxyRuleSetNames.length > 0) {
+        form.append('proxyRuleSetNames', inputs.proxyRuleSetNames.join(','));
+    }
+    if (inputs.proxyRuleSetIds && inputs.proxyRuleSetIds.length > 0) {
+        form.append('proxyRuleSetIds', inputs.proxyRuleSetIds.join(','));
     }
     if (inputs.tags) {
         form.append('tags', inputs.tags);

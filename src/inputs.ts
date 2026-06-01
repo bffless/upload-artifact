@@ -6,6 +6,16 @@ import { deriveContext } from './context';
 // the alias basePath. "./" or "." survive that and get prepended literally to every
 // asset lookup, breaking all requests. Rewrite them to "/" so the alias ends up with
 // an empty prefix, which is what users mean when they pass "./".
+// Split a comma-separated input into a trimmed, non-empty string array.
+export function splitCsv(raw: string | undefined): string[] | undefined {
+  if (!raw) return undefined;
+  const parts = raw
+    .split(',')
+    .map((s) => s.trim())
+    .filter((s) => s.length > 0);
+  return parts.length > 0 ? parts : undefined;
+}
+
 export function normalizeBasePath(raw: string): string {
   const trimmed = raw.trim();
   if (trimmed === './' || trimmed === '.') {
@@ -40,6 +50,8 @@ export function getInputs(): ActionInputs {
   const description = core.getInput('description') || undefined;
   const proxyRuleSetName = core.getInput('proxy-rule-set-name') || undefined;
   const proxyRuleSetId = core.getInput('proxy-rule-set-id') || undefined;
+  const proxyRuleSetNames = splitCsv(core.getInput('proxy-rule-set-names'));
+  const proxyRuleSetIds = splitCsv(core.getInput('proxy-rule-set-ids'));
   const tags = core.getInput('tags') || undefined;
 
   const summaryInput = core.getInput('summary') || 'true';
@@ -65,6 +77,8 @@ export function getInputs(): ActionInputs {
     description,
     proxyRuleSetName,
     proxyRuleSetId,
+    proxyRuleSetNames,
+    proxyRuleSetIds,
     tags,
     summary,
     summaryTitle,

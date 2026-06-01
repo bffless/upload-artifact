@@ -150,6 +150,78 @@ describe('getInputs', () => {
     expect(result.summary).toBe(false);
   });
 
+  it('should parse plural proxy rule set names and IDs', () => {
+    const mockGetInput = vi.mocked(core.getInput);
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        'path': 'dist',
+        'api-url': 'https://assets.example.com',
+        'api-key': 'key',
+        'proxy-rule-set-names': 'stripe-webhook, ai-proxy ,analytics',
+        'proxy-rule-set-ids': 'id-a, id-b',
+      };
+      return inputs[name] || '';
+    });
+
+    const result = getInputs();
+    expect(result.proxyRuleSetNames).toEqual(['stripe-webhook', 'ai-proxy', 'analytics']);
+    expect(result.proxyRuleSetIds).toEqual(['id-a', 'id-b']);
+  });
+
+  it('should leave plural proxy rule set inputs undefined when empty', () => {
+    const mockGetInput = vi.mocked(core.getInput);
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        'path': 'dist',
+        'api-url': 'https://assets.example.com',
+        'api-key': 'key',
+      };
+      return inputs[name] || '';
+    });
+
+    const result = getInputs();
+    expect(result.proxyRuleSetNames).toBeUndefined();
+    expect(result.proxyRuleSetIds).toBeUndefined();
+  });
+
+  it('should drop empty segments when parsing plural proxy rule set inputs', () => {
+    const mockGetInput = vi.mocked(core.getInput);
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        'path': 'dist',
+        'api-url': 'https://assets.example.com',
+        'api-key': 'key',
+        'proxy-rule-set-ids': ',id-a,,id-b, , ',
+      };
+      return inputs[name] || '';
+    });
+
+    const result = getInputs();
+    expect(result.proxyRuleSetIds).toEqual(['id-a', 'id-b']);
+  });
+
+  it('should keep singular and plural inputs side-by-side', () => {
+    const mockGetInput = vi.mocked(core.getInput);
+    mockGetInput.mockImplementation((name: string) => {
+      const inputs: Record<string, string> = {
+        'path': 'dist',
+        'api-url': 'https://assets.example.com',
+        'api-key': 'key',
+        'proxy-rule-set-name': 'legacy-name',
+        'proxy-rule-set-id': 'legacy-id',
+        'proxy-rule-set-names': 'new-name',
+        'proxy-rule-set-ids': 'new-id',
+      };
+      return inputs[name] || '';
+    });
+
+    const result = getInputs();
+    expect(result.proxyRuleSetName).toBe('legacy-name');
+    expect(result.proxyRuleSetId).toBe('legacy-id');
+    expect(result.proxyRuleSetNames).toEqual(['new-name']);
+    expect(result.proxyRuleSetIds).toEqual(['new-id']);
+  });
+
   it('should use explicit overrides for repository, sha, branch', () => {
     const mockGetInput = vi.mocked(core.getInput);
     mockGetInput.mockImplementation((name: string) => {

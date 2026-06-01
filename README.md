@@ -115,8 +115,10 @@ The comment is automatically updated on subsequent pushes to the same PR.
 | `base-path`           | no       | `/<path>`              | Path prefix in zip                    |
 | `committed-at`        | no       | auto via `git log`     | ISO 8601 commit timestamp             |
 | `description`         | no       | --                     | Human-readable description            |
-| `proxy-rule-set-name` | no       | --                     | Proxy rule set name                   |
-| `proxy-rule-set-id`   | no       | --                     | Proxy rule set ID                     |
+| `proxy-rule-set-name` | no       | --                     | Single proxy rule set name (legacy — prefer `proxy-rule-set-names`) |
+| `proxy-rule-set-id`   | no       | --                     | Single proxy rule set ID (legacy — prefer `proxy-rule-set-ids`)     |
+| `proxy-rule-set-names`| no       | --                     | Comma-separated proxy rule set names (appended idempotently) |
+| `proxy-rule-set-ids`  | no       | --                     | Comma-separated proxy rule set IDs (appended idempotently)   |
 | `tags`                | no       | --                     | Comma-separated tags                  |
 | `summary`             | no       | `'true'`               | Write GitHub Step Summary             |
 | `summary-title`       | no       | `'Deployment Summary'` | Summary heading                       |
