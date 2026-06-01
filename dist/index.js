@@ -62962,6 +62962,7 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.splitCsv = splitCsv;
 exports.normalizeBasePath = normalizeBasePath;
 exports.getInputs = getInputs;
 const core = __importStar(__nccwpck_require__(6966));
@@ -62970,6 +62971,16 @@ const context_1 = __nccwpck_require__(8637);
 // the alias basePath. "./" or "." survive that and get prepended literally to every
 // asset lookup, breaking all requests. Rewrite them to "/" so the alias ends up with
 // an empty prefix, which is what users mean when they pass "./".
+// Split a comma-separated input into a trimmed, non-empty string array.
+function splitCsv(raw) {
+    if (!raw)
+        return undefined;
+    const parts = raw
+        .split(',')
+        .map((s) => s.trim())
+        .filter((s) => s.length > 0);
+    return parts.length > 0 ? parts : undefined;
+}
 function normalizeBasePath(raw) {
     const trimmed = raw.trim();
     if (trimmed === './' || trimmed === '.') {
@@ -62998,6 +63009,8 @@ function getInputs() {
     const description = core.getInput('description') || undefined;
     const proxyRuleSetName = core.getInput('proxy-rule-set-name') || undefined;
     const proxyRuleSetId = core.getInput('proxy-rule-set-id') || undefined;
+    const proxyRuleSetNames = splitCsv(core.getInput('proxy-rule-set-names'));
+    const proxyRuleSetIds = splitCsv(core.getInput('proxy-rule-set-ids'));
     const tags = core.getInput('tags') || undefined;
     const summaryInput = core.getInput('summary') || 'true';
     const summary = summaryInput.toLowerCase() !== 'false';
@@ -63020,6 +63033,8 @@ function getInputs() {
         description,
         proxyRuleSetName,
         proxyRuleSetId,
+        proxyRuleSetNames,
+        proxyRuleSetIds,
         tags,
         summary,
         summaryTitle,
@@ -63351,6 +63366,8 @@ async function uploadWithPresignedUrls(inputs) {
         tags: inputs.tags,
         proxyRuleSetName: inputs.proxyRuleSetName,
         proxyRuleSetId: inputs.proxyRuleSetId,
+        proxyRuleSetNames: inputs.proxyRuleSetNames?.join(','),
+        proxyRuleSetIds: inputs.proxyRuleSetIds?.join(','),
         files: files.map((f) => ({
             path: f.relativePath,
             size: f.size,
@@ -63387,9 +63404,15 @@ async function uploadWithPresignedUrls(inputs) {
         }
     }
     core.info(`Successfully uploaded ${uploadResults.success.length} files`);
-    // Finalize upload
+    // Finalize upload — pass proxy rule sets on finalize as well, since the
+    // finalize body is authoritative for the alias wiring (overrides anything
+    // carried over from prepare).
     const response = await (0, artifact_client_1.finalizeUpload)(inputs.apiUrl, inputs.apiKey, {
         uploadToken: prepareResponse.uploadToken,
+        proxyRuleSetName: inputs.proxyRuleSetName,
+        proxyRuleSetId: inputs.proxyRuleSetId,
+        proxyRuleSetNames: inputs.proxyRuleSetNames?.join(','),
+        proxyRuleSetIds: inputs.proxyRuleSetIds?.join(','),
     });
     core.info('Upload finalized successfully');
     core.info(`Deployment ID: ${response.deploymentId}`);
@@ -63435,6 +63458,12 @@ async function uploadZip(zipPath, inputs) {
     }
     if (inputs.proxyRuleSetId) {
         form.append('proxyRuleSetId', inputs.proxyRuleSetId);
+    }
+    if (inputs.proxyRuleSetNames && inputs.proxyRuleSetNames.length > 0) {
+        form.append('proxyRuleSetNames', inputs.proxyRuleSetNames.join(','));
+    }
+    if (inputs.proxyRuleSetIds && inputs.proxyRuleSetIds.length > 0) {
+        form.append('proxyRuleSetIds', inputs.proxyRuleSetIds.join(','));
     }
     if (inputs.tags) {
         form.append('tags', inputs.tags);

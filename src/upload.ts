@@ -48,6 +48,8 @@ export async function uploadWithPresignedUrls(
       tags: inputs.tags,
       proxyRuleSetName: inputs.proxyRuleSetName,
       proxyRuleSetId: inputs.proxyRuleSetId,
+      proxyRuleSetNames: inputs.proxyRuleSetNames?.join(','),
+      proxyRuleSetIds: inputs.proxyRuleSetIds?.join(','),
       files: files.map((f) => ({
         path: f.relativePath,
         size: f.size,
@@ -103,9 +105,15 @@ export async function uploadWithPresignedUrls(
 
   core.info(`Successfully uploaded ${uploadResults.success.length} files`);
 
-  // Finalize upload
+  // Finalize upload — pass proxy rule sets on finalize as well, since the
+  // finalize body is authoritative for the alias wiring (overrides anything
+  // carried over from prepare).
   const response = await finalizeUpload(inputs.apiUrl, inputs.apiKey, {
     uploadToken: prepareResponse.uploadToken,
+    proxyRuleSetName: inputs.proxyRuleSetName,
+    proxyRuleSetId: inputs.proxyRuleSetId,
+    proxyRuleSetNames: inputs.proxyRuleSetNames?.join(','),
+    proxyRuleSetIds: inputs.proxyRuleSetIds?.join(','),
   });
 
   core.info('Upload finalized successfully');
@@ -163,6 +171,12 @@ export async function uploadZip(
   }
   if (inputs.proxyRuleSetId) {
     form.append('proxyRuleSetId', inputs.proxyRuleSetId);
+  }
+  if (inputs.proxyRuleSetNames && inputs.proxyRuleSetNames.length > 0) {
+    form.append('proxyRuleSetNames', inputs.proxyRuleSetNames.join(','));
+  }
+  if (inputs.proxyRuleSetIds && inputs.proxyRuleSetIds.length > 0) {
+    form.append('proxyRuleSetIds', inputs.proxyRuleSetIds.join(','));
   }
   if (inputs.tags) {
     form.append('tags', inputs.tags);

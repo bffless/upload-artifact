@@ -42,10 +42,16 @@ inputs:
     description: 'Human-readable deployment description'
     required: false
   proxy-rule-set-name:
-    description: 'Proxy rule set name to apply'
+    description: 'Proxy rule set name to apply. Legacy — prefer proxy-rule-set-names.'
     required: false
   proxy-rule-set-id:
-    description: 'Proxy rule set ID to apply'
+    description: 'Proxy rule set ID to apply. Legacy — prefer proxy-rule-set-ids.'
+    required: false
+  proxy-rule-set-names:
+    description: 'Comma-separated proxy rule set names to attach to the deployed alias. Appended idempotently in order — re-deploying with the same names is a no-op.'
+    required: false
+  proxy-rule-set-ids:
+    description: 'Comma-separated proxy rule set IDs to attach to the deployed alias. Appended idempotently in order — re-deploying with the same IDs is a no-op.'
     required: false
   tags:
     description: 'Comma-separated tags'

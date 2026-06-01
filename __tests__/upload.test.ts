@@ -195,9 +195,60 @@ describe('uploadZip', () => {
     // Should not contain alias or description since they weren't set
     expect(receivedBody).not.toContain('name="alias"');
     expect(receivedBody).not.toContain('name="description"');
+    // Should not include plural fields when not provided
+    expect(receivedBody).not.toContain('name="proxyRuleSetIds"');
+    expect(receivedBody).not.toContain('name="proxyRuleSetNames"');
 
     await new Promise<void>((resolve) =>
       optionalServer.close(() => resolve())
+    );
+  });
+
+  it('should send plural proxy rule set fields as comma-separated strings on zip upload', async () => {
+    let receivedBody = '';
+    const pluralServer = http.createServer((req, res) => {
+      const chunks: Buffer[] = [];
+      req.on('data', (chunk: Buffer) => chunks.push(chunk));
+      req.on('end', () => {
+        receivedBody = Buffer.concat(chunks).toString();
+        res.writeHead(201, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify(mockResponse));
+      });
+    });
+
+    const pluralPort = await new Promise<number>((resolve) => {
+      pluralServer.listen(0, () => {
+        const addr = pluralServer.address();
+        if (addr && typeof addr === 'object') {
+          resolve(addr.port);
+        }
+      });
+    });
+
+    const inputs: ActionInputs = {
+      path: 'dist',
+      apiUrl: `http://localhost:${pluralPort}`,
+      apiKey: 'test-key',
+      repository: 'test-owner/test-repo',
+      commitSha: 'abc123',
+      branch: 'main',
+      isPublic: 'true',
+      proxyRuleSetNames: ['stripe-webhook', 'ai-proxy'],
+      proxyRuleSetIds: ['id-a', 'id-b'],
+      summary: true,
+      summaryTitle: 'Deployment Summary',
+      workingDirectory: '.',
+    };
+
+    await uploadZip(zipPath, inputs);
+
+    expect(receivedBody).toContain('name="proxyRuleSetNames"');
+    expect(receivedBody).toContain('stripe-webhook,ai-proxy');
+    expect(receivedBody).toContain('name="proxyRuleSetIds"');
+    expect(receivedBody).toContain('id-a,id-b');
+
+    await new Promise<void>((resolve) =>
+      pluralServer.close(() => resolve())
     );
   });
 });

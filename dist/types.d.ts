@@ -13,6 +13,8 @@ export interface ActionInputs {
     description?: string;
     proxyRuleSetName?: string;
     proxyRuleSetId?: string;
+    proxyRuleSetNames?: string[];
+    proxyRuleSetIds?: string[];
     tags?: string;
     summary: boolean;
     summaryTitle: string;
