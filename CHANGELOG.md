@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.4.1](https://github.com/bffless/upload-artifact/compare/v1.4.0...v1.4.1) (2026-07-12)
+
+
+### Bug Fixes
+
+* consume @bffless/artifact-client ^1.1.1; rebuild dist ([4031fc1](https://github.com/bffless/upload-artifact/commit/4031fc12deb9efe4109d48f0da49a02f22ec3b3b))
+* send proxy rule set arrays instead of comma-joined strings ([79c7085](https://github.com/bffless/upload-artifact/commit/79c7085a93fa77614c29df69f47e64d4a1261ae3))
+* send proxy rule set arrays instead of comma-joined strings ([fbe4e10](https://github.com/bffless/upload-artifact/commit/fbe4e109bb76d1d35566eb1657b94a7d8ec0d204))
+
 ## [1.4.0](https://github.com/bffless/upload-artifact/compare/v1.3.1...v1.4.0) (2026-06-01)
 
 
