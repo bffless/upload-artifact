@@ -48,8 +48,8 @@ export async function uploadWithPresignedUrls(
       tags: inputs.tags,
       proxyRuleSetName: inputs.proxyRuleSetName,
       proxyRuleSetId: inputs.proxyRuleSetId,
-      proxyRuleSetNames: inputs.proxyRuleSetNames?.join(','),
-      proxyRuleSetIds: inputs.proxyRuleSetIds?.join(','),
+      proxyRuleSetNames: inputs.proxyRuleSetNames,
+      proxyRuleSetIds: inputs.proxyRuleSetIds,
       files: files.map((f) => ({
         path: f.relativePath,
         size: f.size,
@@ -112,8 +112,8 @@ export async function uploadWithPresignedUrls(
     uploadToken: prepareResponse.uploadToken,
     proxyRuleSetName: inputs.proxyRuleSetName,
     proxyRuleSetId: inputs.proxyRuleSetId,
-    proxyRuleSetNames: inputs.proxyRuleSetNames?.join(','),
-    proxyRuleSetIds: inputs.proxyRuleSetIds?.join(','),
+    proxyRuleSetNames: inputs.proxyRuleSetNames,
+    proxyRuleSetIds: inputs.proxyRuleSetIds,
   });
 
   core.info('Upload finalized successfully');
@@ -172,11 +172,21 @@ export async function uploadZip(
   if (inputs.proxyRuleSetId) {
     form.append('proxyRuleSetId', inputs.proxyRuleSetId);
   }
+  // Append each element as its own repeated part rather than joining with commas.
+  // multer/busboy only yields an array when a multipart field repeats >= 2 times —
+  // a single occurrence arrives at the backend as a bare string, which CE's
+  // CreateDeploymentZipDto (>= 0.2.0) normalizes to a one-element array via
+  // @Transform. Older CE builds without that transform will reject a bare string
+  // for these array-typed fields, so plural inputs require CE >= 0.2.0.
   if (inputs.proxyRuleSetNames && inputs.proxyRuleSetNames.length > 0) {
-    form.append('proxyRuleSetNames', inputs.proxyRuleSetNames.join(','));
+    for (const name of inputs.proxyRuleSetNames) {
+      form.append('proxyRuleSetNames', name);
+    }
   }
   if (inputs.proxyRuleSetIds && inputs.proxyRuleSetIds.length > 0) {
-    form.append('proxyRuleSetIds', inputs.proxyRuleSetIds.join(','));
+    for (const id of inputs.proxyRuleSetIds) {
+      form.append('proxyRuleSetIds', id);
+    }
   }
   if (inputs.tags) {
     form.append('tags', inputs.tags);

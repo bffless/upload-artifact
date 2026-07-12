@@ -117,8 +117,8 @@ The comment is automatically updated on subsequent pushes to the same PR.
 | `description`         | no       | --                     | Human-readable description            |
 | `proxy-rule-set-name` | no       | --                     | Single proxy rule set name (legacy — prefer `proxy-rule-set-names`) |
 | `proxy-rule-set-id`   | no       | --                     | Single proxy rule set ID (legacy — prefer `proxy-rule-set-ids`)     |
-| `proxy-rule-set-names`| no       | --                     | Comma-separated proxy rule set names (appended idempotently) |
-| `proxy-rule-set-ids`  | no       | --                     | Comma-separated proxy rule set IDs (appended idempotently)   |
+| `proxy-rule-set-names`| no       | --                     | Comma-separated proxy rule set names, sent as an array (appended idempotently). Requires CE >= 0.2.0. |
+| `proxy-rule-set-ids`  | no       | --                     | Comma-separated proxy rule set IDs, sent as an array (appended idempotently). Requires CE >= 0.2.0.   |
 | `tags`                | no       | --                     | Comma-separated tags                  |
 | `summary`             | no       | `'true'`               | Write GitHub Step Summary             |
 | `summary-title`       | no       | `'Deployment Summary'` | Summary heading                       |
