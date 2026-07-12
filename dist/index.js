@@ -3449,7 +3449,7 @@ function copyFile(srcFile, destFile, force) {
 
 /***/ }),
 
-/***/ 3102:
+/***/ 2509:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -3499,7 +3499,7 @@ const path = __importStar(__nccwpck_require__(6928));
 const http = __importStar(__nccwpck_require__(8611));
 const https = __importStar(__nccwpck_require__(5692));
 const url_1 = __nccwpck_require__(7016);
-const http_1 = __nccwpck_require__(7474);
+const http_1 = __nccwpck_require__(4141);
 /**
  * Request presigned URLs for batch download
  */
@@ -3714,7 +3714,7 @@ async function downloadFilesDirect(apiUrl, apiKey, files, outputDir, params, con
 
 /***/ }),
 
-/***/ 7474:
+/***/ 4141:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -3798,7 +3798,7 @@ async function postJson(url, body, apiKey) {
 
 /***/ }),
 
-/***/ 7900:
+/***/ 2625:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -3820,19 +3820,19 @@ var __exportStar = (this && this.__exportStar) || function(m, exports) {
 Object.defineProperty(exports, "__esModule", ({ value: true }));
 exports.uploadFilesWithPresignedUrls = exports.uploadFileToPresignedUrl = exports.finalizeUpload = exports.requestPrepareBatchUpload = exports.downloadFilesDirect = exports.downloadFilesWithPresignedUrls = exports.downloadFileDirect = exports.downloadFileFromPresignedUrl = exports.requestPrepareBatchDownload = exports.postJson = void 0;
 // Types
-__exportStar(__nccwpck_require__(153), exports);
+__exportStar(__nccwpck_require__(8784), exports);
 // HTTP utilities
-var http_1 = __nccwpck_require__(7474);
+var http_1 = __nccwpck_require__(4141);
 Object.defineProperty(exports, "postJson", ({ enumerable: true, get: function () { return http_1.postJson; } }));
 // Download functions
-var download_1 = __nccwpck_require__(3102);
+var download_1 = __nccwpck_require__(2509);
 Object.defineProperty(exports, "requestPrepareBatchDownload", ({ enumerable: true, get: function () { return download_1.requestPrepareBatchDownload; } }));
 Object.defineProperty(exports, "downloadFileFromPresignedUrl", ({ enumerable: true, get: function () { return download_1.downloadFileFromPresignedUrl; } }));
 Object.defineProperty(exports, "downloadFileDirect", ({ enumerable: true, get: function () { return download_1.downloadFileDirect; } }));
 Object.defineProperty(exports, "downloadFilesWithPresignedUrls", ({ enumerable: true, get: function () { return download_1.downloadFilesWithPresignedUrls; } }));
 Object.defineProperty(exports, "downloadFilesDirect", ({ enumerable: true, get: function () { return download_1.downloadFilesDirect; } }));
 // Upload functions
-var upload_1 = __nccwpck_require__(5247);
+var upload_1 = __nccwpck_require__(6052);
 Object.defineProperty(exports, "requestPrepareBatchUpload", ({ enumerable: true, get: function () { return upload_1.requestPrepareBatchUpload; } }));
 Object.defineProperty(exports, "finalizeUpload", ({ enumerable: true, get: function () { return upload_1.finalizeUpload; } }));
 Object.defineProperty(exports, "uploadFileToPresignedUrl", ({ enumerable: true, get: function () { return upload_1.uploadFileToPresignedUrl; } }));
@@ -3841,7 +3841,7 @@ Object.defineProperty(exports, "uploadFilesWithPresignedUrls", ({ enumerable: tr
 
 /***/ }),
 
-/***/ 153:
+/***/ 8784:
 /***/ ((__unused_webpack_module, exports) => {
 
 "use strict";
@@ -3854,7 +3854,7 @@ Object.defineProperty(exports, "__esModule", ({ value: true }));
 
 /***/ }),
 
-/***/ 5247:
+/***/ 6052:
 /***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
 
 "use strict";
@@ -3902,14 +3902,31 @@ const fs = __importStar(__nccwpck_require__(9896));
 const http = __importStar(__nccwpck_require__(8611));
 const https = __importStar(__nccwpck_require__(5692));
 const url_1 = __nccwpck_require__(7016);
-const http_1 = __nccwpck_require__(7474);
+const http_1 = __nccwpck_require__(4141);
+/**
+ * Normalize a plural proxy-rule-set field into a real array, splitting a
+ * legacy comma-separated string for back-compat. Returns undefined when the
+ * input is undefined or normalizes to an empty array, so the key is omitted
+ * from the JSON body rather than sent as `[]`.
+ */
+function toArray(v) {
+    if (v === undefined)
+        return undefined;
+    const arr = Array.isArray(v) ? v : v.split(',').map((s) => s.trim()).filter(Boolean);
+    return arr.length > 0 ? arr : undefined;
+}
 /**
  * Request presigned URLs for batch upload
  */
 async function requestPrepareBatchUpload(apiUrl, apiKey, request) {
     const url = new url_1.URL('/api/deployments/prepare-batch-upload', apiUrl);
     core.info(`Requesting presigned URLs for ${request.files.length} files...`);
-    const response = await (0, http_1.postJson)(url, request, apiKey);
+    const body = {
+        ...request,
+        proxyRuleSetNames: toArray(request.proxyRuleSetNames),
+        proxyRuleSetIds: toArray(request.proxyRuleSetIds),
+    };
+    const response = await (0, http_1.postJson)(url, body, apiKey);
     return response;
 }
 /**
@@ -3918,7 +3935,12 @@ async function requestPrepareBatchUpload(apiUrl, apiKey, request) {
 async function finalizeUpload(apiUrl, apiKey, request) {
     const url = new url_1.URL('/api/deployments/finalize-upload', apiUrl);
     core.info('Finalizing upload...');
-    const response = await (0, http_1.postJson)(url, request, apiKey);
+    const body = {
+        ...request,
+        proxyRuleSetNames: toArray(request.proxyRuleSetNames),
+        proxyRuleSetIds: toArray(request.proxyRuleSetIds),
+    };
+    const response = await (0, http_1.postJson)(url, body, apiKey);
     return response;
 }
 /**
@@ -63340,7 +63362,7 @@ const path = __importStar(__nccwpck_require__(6928));
 const form_data_1 = __importDefault(__nccwpck_require__(2031));
 const url_1 = __nccwpck_require__(7016);
 const files_1 = __nccwpck_require__(5713);
-const artifact_client_1 = __nccwpck_require__(7900);
+const artifact_client_1 = __nccwpck_require__(2625);
 /**
  * Upload files using presigned URLs (direct to storage)
  * Returns null if presigned URLs are not supported (fallback to ZIP upload)
@@ -63366,8 +63388,8 @@ async function uploadWithPresignedUrls(inputs) {
         tags: inputs.tags,
         proxyRuleSetName: inputs.proxyRuleSetName,
         proxyRuleSetId: inputs.proxyRuleSetId,
-        proxyRuleSetNames: inputs.proxyRuleSetNames?.join(','),
-        proxyRuleSetIds: inputs.proxyRuleSetIds?.join(','),
+        proxyRuleSetNames: inputs.proxyRuleSetNames,
+        proxyRuleSetIds: inputs.proxyRuleSetIds,
         files: files.map((f) => ({
             path: f.relativePath,
             size: f.size,
@@ -63411,8 +63433,8 @@ async function uploadWithPresignedUrls(inputs) {
         uploadToken: prepareResponse.uploadToken,
         proxyRuleSetName: inputs.proxyRuleSetName,
         proxyRuleSetId: inputs.proxyRuleSetId,
-        proxyRuleSetNames: inputs.proxyRuleSetNames?.join(','),
-        proxyRuleSetIds: inputs.proxyRuleSetIds?.join(','),
+        proxyRuleSetNames: inputs.proxyRuleSetNames,
+        proxyRuleSetIds: inputs.proxyRuleSetIds,
     });
     core.info('Upload finalized successfully');
     core.info(`Deployment ID: ${response.deploymentId}`);
@@ -63459,11 +63481,21 @@ async function uploadZip(zipPath, inputs) {
     if (inputs.proxyRuleSetId) {
         form.append('proxyRuleSetId', inputs.proxyRuleSetId);
     }
+    // Append each element as its own repeated part rather than joining with commas.
+    // multer/busboy only yields an array when a multipart field repeats >= 2 times —
+    // a single occurrence arrives at the backend as a bare string, which CE's
+    // CreateDeploymentZipDto (>= 0.2.0) normalizes to a one-element array via
+    // @Transform. Older CE builds without that transform will reject a bare string
+    // for these array-typed fields, so plural inputs require CE >= 0.2.0.
     if (inputs.proxyRuleSetNames && inputs.proxyRuleSetNames.length > 0) {
-        form.append('proxyRuleSetNames', inputs.proxyRuleSetNames.join(','));
+        for (const name of inputs.proxyRuleSetNames) {
+            form.append('proxyRuleSetNames', name);
+        }
     }
     if (inputs.proxyRuleSetIds && inputs.proxyRuleSetIds.length > 0) {
-        form.append('proxyRuleSetIds', inputs.proxyRuleSetIds.join(','));
+        for (const id of inputs.proxyRuleSetIds) {
+            form.append('proxyRuleSetIds', id);
+        }
     }
     if (inputs.tags) {
         form.append('tags', inputs.tags);
