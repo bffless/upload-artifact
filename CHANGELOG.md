@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.2](https://github.com/bffless/upload-artifact/compare/v1.4.1...v1.4.2) (2026-08-24)
+
+
+### Bug Fixes
+
+* keep .bffless/ directories when walking the build directory ([c19ee65](https://github.com/bffless/upload-artifact/commit/c19ee658a2af18ac66161b0b145595e9c2547c1b))
+* keep .bffless/ directories when walking the build directory ([865ec6b](https://github.com/bffless/upload-artifact/commit/865ec6b2ce1a01e61edc5fef64452d27701b882d))
+
 ## [1.4.1](https://github.com/bffless/upload-artifact/compare/v1.4.0...v1.4.1) (2026-07-12)
 
 
