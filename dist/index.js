@@ -62754,8 +62754,13 @@ const fs = __importStar(__nccwpck_require__(9896));
 const path = __importStar(__nccwpck_require__(6928));
 const mimeTypes = __importStar(__nccwpck_require__(2922));
 /**
+ * The one dot-directory a bundle is allowed to ship: BFFless reads `.bffless/skills`,
+ * `.bffless/workflows`, … from a deployment, and the CE zip path keeps it too.
+ */
+const KEPT_DOT_DIR = ".bffless";
+/**
  * Recursively walk a directory and collect all files
- * Skips hidden files and system files
+ * Skips hidden files and system files (except `.bffless/` directories, at any depth)
  */
 async function walkDirectory(dirPath, basePath) {
     const files = [];
@@ -62763,15 +62768,19 @@ async function walkDirectory(dirPath, basePath) {
     return files;
 }
 async function walkRecursive(currentPath, basePath, rootPath, files) {
-    const entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
+    const entries = await fs.promises.readdir(currentPath, {
+        withFileTypes: true,
+    });
     for (const entry of entries) {
         const fullPath = path.join(currentPath, entry.name);
-        // Skip hidden files and directories
-        if (entry.name.startsWith('.')) {
+        // Skip hidden files and directories — except a `.bffless/` directory, which is
+        // where a bundle publishes what BFFless itself reads (skills, workflows).
+        if (entry.name.startsWith(".") &&
+            !(entry.name === KEPT_DOT_DIR && entry.isDirectory())) {
             continue;
         }
         // Skip common system directories
-        if (entry.name === '__MACOSX' || entry.name === 'node_modules') {
+        if (entry.name === "__MACOSX" || entry.name === "node_modules") {
             continue;
         }
         if (entry.isDirectory()) {
@@ -62782,9 +62791,11 @@ async function walkRecursive(currentPath, basePath, rootPath, files) {
             // Build relative path that preserves directory structure
             // relativePath includes basePath prefix: e.g., "apps/frontend/dist/index.html"
             const pathFromRoot = path.relative(rootPath, fullPath);
-            const relativePath = path.join(basePath, pathFromRoot).replace(/\\/g, '/');
+            const relativePath = path
+                .join(basePath, pathFromRoot)
+                .replace(/\\/g, "/");
             // Detect MIME type
-            const contentType = mimeTypes.lookup(entry.name) || 'application/octet-stream';
+            const contentType = mimeTypes.lookup(entry.name) || "application/octet-stream";
             files.push({
                 absolutePath: fullPath,
                 relativePath,

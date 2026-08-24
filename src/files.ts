@@ -1,6 +1,6 @@
-import * as fs from 'fs';
-import * as path from 'path';
-import * as mimeTypes from 'mime-types';
+import * as fs from "fs";
+import * as path from "path";
+import * as mimeTypes from "mime-types";
 
 export interface FileInfo {
   /** Absolute path to the file */
@@ -14,12 +14,18 @@ export interface FileInfo {
 }
 
 /**
+ * The one dot-directory a bundle is allowed to ship: BFFless reads `.bffless/skills`,
+ * `.bffless/workflows`, … from a deployment, and the CE zip path keeps it too.
+ */
+const KEPT_DOT_DIR = ".bffless";
+
+/**
  * Recursively walk a directory and collect all files
- * Skips hidden files and system files
+ * Skips hidden files and system files (except `.bffless/` directories, at any depth)
  */
 export async function walkDirectory(
   dirPath: string,
-  basePath: string
+  basePath: string,
 ): Promise<FileInfo[]> {
   const files: FileInfo[] = [];
   await walkRecursive(dirPath, basePath, dirPath, files);
@@ -30,20 +36,26 @@ async function walkRecursive(
   currentPath: string,
   basePath: string,
   rootPath: string,
-  files: FileInfo[]
+  files: FileInfo[],
 ): Promise<void> {
-  const entries = await fs.promises.readdir(currentPath, { withFileTypes: true });
+  const entries = await fs.promises.readdir(currentPath, {
+    withFileTypes: true,
+  });
 
   for (const entry of entries) {
     const fullPath = path.join(currentPath, entry.name);
 
-    // Skip hidden files and directories
-    if (entry.name.startsWith('.')) {
+    // Skip hidden files and directories — except a `.bffless/` directory, which is
+    // where a bundle publishes what BFFless itself reads (skills, workflows).
+    if (
+      entry.name.startsWith(".") &&
+      !(entry.name === KEPT_DOT_DIR && entry.isDirectory())
+    ) {
       continue;
     }
 
     // Skip common system directories
-    if (entry.name === '__MACOSX' || entry.name === 'node_modules') {
+    if (entry.name === "__MACOSX" || entry.name === "node_modules") {
       continue;
     }
 
@@ -55,10 +67,13 @@ async function walkRecursive(
       // Build relative path that preserves directory structure
       // relativePath includes basePath prefix: e.g., "apps/frontend/dist/index.html"
       const pathFromRoot = path.relative(rootPath, fullPath);
-      const relativePath = path.join(basePath, pathFromRoot).replace(/\\/g, '/');
+      const relativePath = path
+        .join(basePath, pathFromRoot)
+        .replace(/\\/g, "/");
 
       // Detect MIME type
-      const contentType = mimeTypes.lookup(entry.name) || 'application/octet-stream';
+      const contentType =
+        mimeTypes.lookup(entry.name) || "application/octet-stream";
 
       files.push({
         absolutePath: fullPath,
@@ -75,7 +90,7 @@ async function walkRecursive(
  */
 export function validateDirectory(
   dirPath: string,
-  workingDirectory: string
+  workingDirectory: string,
 ): string {
   const resolvedPath = path.resolve(workingDirectory, dirPath);
 
