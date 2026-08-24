@@ -10,7 +10,7 @@ export interface FileInfo {
 }
 /**
  * Recursively walk a directory and collect all files
- * Skips hidden files and system files
+ * Skips hidden files and system files (except `.bffless/` directories, at any depth)
  */
 export declare function walkDirectory(dirPath: string, basePath: string): Promise<FileInfo[]>;
 /**

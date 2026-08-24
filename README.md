@@ -100,6 +100,13 @@ The comment is automatically updated on subsequent pushes to the same PR.
     echo "Size: ${{ steps.upload.outputs.total-size }}"
 ```
 
+### What gets uploaded
+
+Every file under `path`, except hidden entries (`.git`, `.DS_Store`, any `.`-prefixed file or
+directory), `__MACOSX` and `node_modules`. The one exception is a **`.bffless/` directory**, kept
+at any depth: that is where a bundle publishes what BFFless itself reads — `.bffless/skills`,
+`.bffless/workflows` — so a bundle that is *only* `.bffless/…` still uploads.
+
 ## Inputs
 
 | Input                 | Required | Default                | Description                           |
